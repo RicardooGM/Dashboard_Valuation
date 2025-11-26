@@ -1,0 +1,192 @@
+/* ---------------------------------------------------
+   🔤 FONTE GLOBAL (Poppins)
+--------------------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Aplica a fonte Poppins em todo o app */
+html, body, div, span, p, input, textarea, button, label {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* Força widgets do Streamlit também a usarem Poppins */
+.stMarkdown, 
+.stTextInput, 
+.stSelectbox, 
+.stRadio, 
+.stCheckbox, 
+.stButton > button,
+.stDataFrame,
+.stPlotlyChart,
+.stMetric,
+.stColumn,
+.stNumberInput {
+    font-family: 'Poppins', sans-serif !important;
+}  /* ← A chave que estava faltando aqui */
+
+/* ---------------------------------------------------
+   🎨 CORES DO TEMA
+--------------------------------------------------- */
+:root {
+    --bg-primary: #0F172A;        /* Fundo principal */
+    --bg-secondary: #1E293B;      /* Fundo sidebar */
+    --text-color: #F1F5F9;        /* Cor dos textos */
+    --accent-color: #4CAF50;      /* Cor de destaque */
+}
+
+/* Fundo principal */
+.stApp {
+    background-color: var(--bg-primary) !important;
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+    background-color: var(--bg-secondary) !important;
+}
+
+/* ---------------------------------------------------
+   📝 TEXTOS E TÍTULOS
+--------------------------------------------------- */
+h1, h2, h3, h4, h5, h6, p, label {
+    color: var(--text-color) !important;
+}
+
+h1 {
+    font-weight: 600 !important;
+}
+
+h2, h3 {
+    font-weight: 500 !important;
+}
+
+/* ---------------------------------------------------
+   📊 GRÁFICOS (st.bar_chart / Altair)
+--------------------------------------------------- */
+.vega-embed text {
+    font-size: 10px !important;
+    fill: var(--text-color) !important;
+}
+
+/* ---------------------------------------------------
+   📋 TABELAS DO STREAMLIT
+--------------------------------------------------- */
+[data-testid="stDataFrame"] {
+    color: var(--text-color) !important;
+}
+
+.css-1xm32e0, .css-184tjsw {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-color) !important;
+}
+
+/* ---------------------------------------------------
+   🔘 BOTÕES
+--------------------------------------------------- */
+.stButton > button {
+    background-color: var(--accent-color) !important;
+    color: white !important;
+    border-radius: 6px !important;
+    padding: 0.5rem 1rem !important;
+    border: none !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+}
+
+.stButton > button:hover {
+    opacity: 0.9;
+}
+
+/* ---------------------------------------------------
+   📦 CONTAINERS
+--------------------------------------------------- */
+.css-1d391kg, .css-1fcdlhc {
+    background-color: var(--bg-secondary) !important;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+/* ---------------------------------------------------
+   🔤 TÍTULOS (st.title, st.header, st.subheader)
+--------------------------------------------------- */
+
+/* Força o h1 do Streamlit (st.title) a usar Poppins */
+h1, div[data-testid="stHeader"] h1, .stTitle {
+    font-family: 'Poppins', sans-serif !important;
+    color: var(--text-color) !important;
+    font-weight: 700 !important;
+}
+
+/* Força st.header (h2) */
+h2 {
+    font-family: 'Poppins', sans-serif !important;
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+}
+
+/* Força st.subheader (h3) */
+h3 {
+    font-family: 'Poppins', sans-serif !important;
+    color: var(--text-color) !important;
+    font-weight: 500 !important;
+}
+
+/* ---------------------------------------------------
+   📋 FONTES DAS TABELAS (st.dataframe)
+--------------------------------------------------- */
+
+/* Tabela principal */
+[data-testid="stDataFrame"] * {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 14px !important;
+}
+
+/* Cabeçalho da Tabela */
+[data-testid="stDataFrame"] .css-1qg05tj, 
+[data-testid="stDataFrame"] th {
+    font-family: 'Poppins', sans-serif !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+    color: var(--text-primary) !important;
+}
+
+/* Linhas da Tabela */
+[data-testid="stDataFrame"] td {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    color: var(--text-primary) !important;
+}
+
+/* ---------------------------------------------------
+   📋 TABELAS — Fonte e Cores 100% FORÇADAS
+--------------------------------------------------- */
+
+/* Força fonte em todos os elementos dentro da tabela */
+[data-testid="stDataFrame"] * {
+    font-family: 'Poppins', sans-serif !important;
+}
+
+/* --- Cabeçalho da tabela (títulos) --- */
+[data-testid="stDataFrame"] thead th,
+[data-testid="stDataFrame"] thead td,
+[data-testid="column"] * {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    background-color: var(--bg-tertiary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* --- Conteúdo da tabela --- */
+[data-testid="stDataFrame"] tbody td {
+    font-family: 'Poppins', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: var(--text-primary) !important;
+}
+
+/* Remove qualquer estilo padrão do Streamlit no título */
+.css-1qg05tj, 
+.css-1qg05tj * {
+    color: var(--text-primary) !important;
+    font-family: 'Poppins', sans-serif !important;
+}

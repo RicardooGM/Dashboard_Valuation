@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 import plotly.graph_objects as go
+from setores import SETORES_EMPRESAS
+from beta_setorial import calcular_beta_setor
 
 st.set_page_config(layout="wide")
 
@@ -305,7 +307,7 @@ with st.container(border = True):
             col1, col2 = st.columns(2)
 
             with col1: 
-                nopat = ebitda - depreciacao + imposto
+                nopat = ebitda - depreciacao + (imposto)
                 D_E = divida_bruta/patrimonio_liq
                 st.metric("Debt/Equity",value = f"{D_E*100:.2f}%", delta="20%",)
 
@@ -317,6 +319,34 @@ with st.container(border = True):
                 roa = lucro_liq/ativo
                 st.metric("ROA",value = f"{roa*100:.2f}%", delta="20%",)
 
+with st.container(border = True):
+
+    st.subheader("Taxa de Desconto - WACC")
+
+    #primeira linha
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+         with st.container(border = True):
+
+            st.write("Beta Setorial",unsafe_allow_html=False)
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                setor = st.selectbox(
+                    "Selecione o setor",
+                    list(SETORES_EMPRESAS.keys())
+                    )
+                
+
+                if setor:
+                    empresas = SETORES_EMPRESAS[setor]
+                    beta = calcular_beta_setor(empresas)
+
+                    st.metric("Beta do Setor", value=f"{beta:.2f}")
     
 
 
@@ -325,15 +355,15 @@ with st.container(border = True):
 
 
         
-
+#beta ser selecionado por país e período
 #container de indicadores
 #container de wacc/capm
 #container de multiplos
 #container de Fleuriet
 #Container de mensagem automatica
     
-
-
+#Criar uma pagina chamada DFC, uma Taxa de Desconto e outra multiplos EBITDA elas servirão para explicar como foi feito o calculo do Valuation
+#Qual os valores da participação da divida e equity, para minimizar o wacc e maximizar o ev da empresa
     
 
         

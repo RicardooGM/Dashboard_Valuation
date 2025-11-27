@@ -225,12 +225,104 @@ with st.container(border = True):
 
     st.subheader("Indicadores")
 
+    #primeira linha
+
     col20, col21 = st.columns(2)
 
     with col20:
 
         with st.container(border = True):
-            st.metric("ROIC",value = "10000", delta="20%",)    
+
+            st.write("Rentabilidade",unsafe_allow_html=False)
+
+            col22, col23 = st.columns(2)
+
+            with col22: 
+                nopat = ebitda - depreciacao - imposto
+                roic = nopat/(divida_bruta + patrimonio_liq)
+                st.metric("ROIC",value = f"{roic*100:.2f}%", delta="20%",)
+
+            with col22:
+                roa = lucro_liq/ativo
+                st.metric("ROA",value = f"{roa*100:.2f}%", delta="20%",)
+                
+            with col23:
+                roe = lucro_liq/patrimonio_liq
+                st.metric("ROE",value = f"{roe*100:.2f}%", delta="20%",)
+
+
+    with col21:
+
+        with st.container(border = True):
+
+            st.write("Endividamento",unsafe_allow_html=False)
+
+            col1, col2 = st.columns(2)
+
+            with col1: 
+                nopat = ebitda - depreciacao - imposto
+                D_E = divida_bruta/patrimonio_liq
+                st.metric("Debt/Equity",value = f"{D_E*100:.2f}%", delta="20%",)
+
+            with col2:
+                roe = divida_bruta/ebitda
+                st.metric("Dívida/EBITDA",value = f"{roe*100:.2f}%", delta="20%",)
+
+            with col1:
+                roa = lucro_liq/ativo
+                st.metric("ROA",value = f"{roa*100:.2f}%", delta="20%",)
+
+    with col20:
+
+         with st.container(border = True):
+
+            st.write("Margens",unsafe_allow_html=False)
+
+            col22, col23 = st.columns(2)
+
+            with col22: 
+                margem_bruta = lucro_bruto/receita
+                st.metric("Margem Bruta",value = f"{margem_bruta*100:.2f}%", delta="20%",)
+
+            with col22:
+                nopat_re = nopat/receita
+                st.metric("NOPAT/RECEITA",value = f"{nopat_re*100:.2f}%", delta="20%",)
+                
+            with col23:
+                margem_ebitda = ebitda/receita
+                st.metric("Margem EBITDA",value = f"{margem_ebitda*100:.2f}%", delta="20%",)
+            
+            with col23:
+                margem_liq = lucro_liq/receita
+                st.metric("Margem Líquida",value = f"{margem_liq*100:.2f}%", delta="20%",)
+
+    with col21:
+
+        with st.container(border = True):
+
+            st.write("Endividamento",unsafe_allow_html=False)
+
+            col1, col2 = st.columns(2)
+
+            with col1: 
+                nopat = ebitda - depreciacao + imposto
+                D_E = divida_bruta/patrimonio_liq
+                st.metric("Debt/Equity",value = f"{D_E*100:.2f}%", delta="20%",)
+
+            with col2:
+                roe = divida_bruta/ebitda
+                st.metric("Dívida/EBITDA",value = f"{roe*100:.2f}%", delta="20%",)
+
+            with col1:
+                roa = lucro_liq/ativo
+                st.metric("ROA",value = f"{roa*100:.2f}%", delta="20%",)
+
+    
+
+
+
+
+
 
         
 

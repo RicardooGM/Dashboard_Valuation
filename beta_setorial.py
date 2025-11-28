@@ -1,7 +1,9 @@
 import yfinance as yf
 import numpy as np
+import streamlit as st
 
-def calcular_beta_setor(empresas, ticker_mercado="^BVSP", periodo="2y"):
+
+def calcular_beta_setor(empresas, ticker_mercado="^BVSP", periodo="1y"):
     
     dados = yf.download(empresas + [ticker_mercado], period=periodo)["Close"]
     

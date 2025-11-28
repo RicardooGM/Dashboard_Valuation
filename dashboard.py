@@ -2,10 +2,12 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import yfinance as yf
 import numpy as np
 import plotly.graph_objects as go
 from setores import SETORES_EMPRESAS
 from beta_setorial import calcular_beta_setor
+import plotly.express as px
 
 st.set_page_config(layout="wide")
 
@@ -323,31 +325,106 @@ with st.container(border = True):
 
     st.subheader("Taxa de Desconto - WACC")
 
-    #primeira linha
+#primeira linha
 
-    col1, col2 = st.columns(2)
+    col1, col25, = st.columns(2,vertical_alignment = "top",width="stretch")
+    
 
     with col1:
 
-         with st.container(border = True):
+        st.write("Calculo do Beta",unsafe_allow_html=False)
 
-            st.write("Beta Setorial",unsafe_allow_html=False)
+        col1, col2 = st.columns(2,vertical_alignment = "center")
 
-            col1, col2 = st.columns(2)
+        with col1:
 
-            with col1:
-                setor = st.selectbox(
-                    "Selecione o setor",
-                    list(SETORES_EMPRESAS.keys())
-                    )
+            periodos = {
+            "6 meses": "6mo",
+            "1 ano": "1y",
+            "2 anos": "2y",
+            "5 anos": "5y",
+            "10 anos": "10y",
+            }
+
+            
+            periodo_label = st.selectbox("Período de Cálculo",list(periodos.keys()))
+            periodo = periodos[periodo_label]
+
+            ticker_mercado_map = {
+            "Ibovespa": "^BVSP",
+            "SP500": "VOO",
+            } 
+
+            mercado = st.selectbox("Comparar com",list(ticker_mercado_map.keys()))
+            ticker_mercado = ticker_mercado_map[mercado]
+
+            def calcular_beta_setor(empresas, ticker_mercado= ticker_mercado, periodo=periodo):
+
+                dados = yf.download(empresas + [ticker_mercado], period=periodo)["Close"]
                 
+                retornos = dados.pct_change().dropna()
 
-                if setor:
-                    empresas = SETORES_EMPRESAS[setor]
-                    beta = calcular_beta_setor(empresas)
+                retorno_mercado = retornos[ticker_mercado]
+                retorno_setor = retornos[empresas].mean(axis=1)
 
-                    st.metric("Beta do Setor", value=f"{beta:.2f}")
+                cov = np.cov(retorno_setor, retorno_mercado)[0][1]
+                var = np.var(retorno_mercado)
+
+                beta = cov / var
+                return beta, retorno_setor
+
+            setor = st.selectbox(
+                "Selecione o setor",
+                list(SETORES_EMPRESAS.keys())
+                )
+            
+
+            if setor:
+                empresas = SETORES_EMPRESAS[setor]
+                beta, retorno_setor = calcular_beta_setor(empresas,ticker_mercado=ticker_mercado,
+                periodo=periodo)
+
+            with col2:
+                st.metric("Beta do Setor", value=f"{beta:.2f}")
+                st.metric("Beta do Setor", value=f"{beta:.2f}")
+                st.metric("Beta do Setor", value=f"{beta:.2f}")
+
     
+    with col25:
+        
+            # baixa preços do benchmark/mercado
+            tabela2 = yf.download(ticker_mercado, period=periodo)["Close"]
+            retorno_mercado = tabela2.pct_change().dropna()
+
+            # concatena recebendo só as datas em comum
+            tab_corr = pd.concat([retorno_setor, retorno_mercado], axis=1, join="inner")
+            tab_corr.columns = ["Retorno Setor", "Retorno Mercado"]
+
+            correlacao = px.scatter(
+                tab_corr,
+                x="Retorno Mercado",
+                y="Retorno Setor",
+                title="Retorno Setor vs Retorno Mercado"
+            )
+
+            x = tab_corr["Retorno Mercado"]
+            y = tab_corr["Retorno Setor"]
+            coef = np.polyfit(x, y, 1) # regressão linear (y = ax + b)
+            linha_tendencia = coef[0] * x + coef[1]
+
+
+            correlacao.add_scatter(
+            x=x,
+            y=linha_tendencia,
+            mode="lines",
+            name="Linha de tendência"
+            )
+
+            correlacao.update_layout(
+            plot_bgcolor="#0F172A", # área interna do gráfico
+            paper_bgcolor="#0F172A" # área externa (margem)
+            )
+            st.plotly_chart(correlacao, use_container_width=True)
 
 
 

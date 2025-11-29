@@ -6,7 +6,6 @@ import yfinance as yf
 import numpy as np
 import plotly.graph_objects as go
 from setores import SETORES_EMPRESAS
-from beta_setorial import calcular_beta_setor
 import plotly.express as px
 
 st.set_page_config(layout="wide")
@@ -365,13 +364,22 @@ with st.container(border = True):
                 retornos = dados.pct_change().dropna()
 
                 retorno_mercado = retornos[ticker_mercado]
-                retorno_setor = retornos[empresas].mean(axis=1)
 
-                cov = np.cov(retorno_setor, retorno_mercado)[0][1]
-                var = np.var(retorno_mercado)
+                betas_individuais = {}
 
-                beta = cov / var
-                return beta, retorno_setor
+                # Calcular beta para cada empresa do setor
+                for emp in empresas:
+                    retorno_empresa = retornos[emp]
+                    cov = np.cov(retorno_empresa, retorno_mercado)[0][1]
+                    var = np.var(retorno_mercado)
+                    beta = cov / var
+                    betas_individuais[emp] = beta
+
+                # Beta médio do setor (simples)
+                beta_setor = np.mean(list(betas_individuais.values()))
+
+                return beta_setor, betas_individuais
+            
 
             setor = st.selectbox(
                 "Selecione o setor",
@@ -381,16 +389,29 @@ with st.container(border = True):
 
             if setor:
                 empresas = SETORES_EMPRESAS[setor]
-                beta, retorno_setor = calcular_beta_setor(empresas,ticker_mercado=ticker_mercado,
+                beta_setor, betas_individuais = calcular_beta_setor(empresas,ticker_mercado=ticker_mercado,
                 periodo=periodo)
 
+            aliquota_pct = st.number_input("Aliquota para calculo do Beta Desalavancado, em %",min_value=0.0,
+            max_value=100.0,value=34.0,step=0.1,format="%.1f")
+            aliquota = aliquota_pct/100
+
             with col2:
-                st.metric("Beta do Setor", value=f"{beta:.2f}")
-                st.metric("Beta do Setor", value=f"{beta:.2f}")
-                st.metric("Beta do Setor", value=f"{beta:.2f}")
+                st.metric("Beta Médio Setorial", value=f"{beta_setor:.2f}")
+
+                beta_desalavancado = beta_setor/(1+(1-aliquota)*D_E)
+                
+                st.metric("Beta Desalavancado", value=f"{beta_desalavancado:.2f}")
+
+                #st.metric("Beta Realavancado", value=f"{beta_desalavancado:.2f}")
 
     
     with col25:
+            
+            # --- Cálculo do retorno médio do setor (para o gráfico)
+            dados_setor_grafico = yf.download(empresas, period=periodo)["Close"]
+            retorno_setor = dados_setor_grafico.pct_change().dropna().mean(axis=1)
+
         
             # baixa preços do benchmark/mercado
             tabela2 = yf.download(ticker_mercado, period=periodo)["Close"]
@@ -417,8 +438,22 @@ with st.container(border = True):
             x=x,
             y=linha_tendencia,
             mode="lines",
-            name="Linha de tendência"
+            name="Regressão Linear"
             )
+
+            equacao_texto = f"y = {coef[0]:.3f}x + {coef[1]:.3f}"
+
+            correlacao.add_annotation(
+                x=0.05,
+                y=0.95,
+                xref="paper",
+                yref="paper",
+                text=equacao_texto,
+                showarrow=False,
+                font=dict(size=12, color="white"),
+                bgcolor="rgba(0,0,0,0.5)",
+                borderpad=6)
+
 
             correlacao.update_layout(
             plot_bgcolor="#0F172A", # área interna do gráfico
@@ -432,8 +467,8 @@ with st.container(border = True):
 
 
         
-#beta ser selecionado por país e período
-#container de indicadores
+#beta ser selecionado por país e período ok 
+#container de indicadores ok 
 #container de wacc/capm
 #container de multiplos
 #container de Fleuriet

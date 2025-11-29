@@ -61,5 +61,10 @@ SETORES_EMPRESAS = {
         "IGTI11.SA",
         "JHSF3.SA",
         "MULT3.SA",
+    ],
+    "Papel e Celulose":[
+        "KLBN11.SA",
+        "RANI3.SA",
+        "SUZB3.SA"
     ]
 }

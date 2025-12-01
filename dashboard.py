@@ -9,7 +9,6 @@ from setores import SETORES_EMPRESAS
 import plotly.express as px
 
 st.set_page_config(layout="wide")
-
 # --- ESTILO PERSONALIZADO ---
 
 # Carregar CSS externo
@@ -323,13 +322,14 @@ with st.container(border = True):
 with st.container(border = True):
 
     st.subheader("Taxa de Desconto - WACC")
-
+    
 #primeira linha
 
     col1, col25, = st.columns(2,vertical_alignment = "top",width="stretch")
     
 
     with col1:
+        
 
         st.write("Calculo do Beta",unsafe_allow_html=False)
 
@@ -354,7 +354,7 @@ with st.container(border = True):
             "SP500": "VOO",
             } 
 
-            mercado = st.selectbox("Comparar com",list(ticker_mercado_map.keys()))
+            mercado = st.selectbox("Benchmark",list(ticker_mercado_map.keys()))
             ticker_mercado = ticker_mercado_map[mercado]
 
             def calcular_beta_setor(empresas, ticker_mercado= ticker_mercado, periodo=periodo):
@@ -425,7 +425,7 @@ with st.container(border = True):
                 tab_corr,
                 x="Retorno Mercado",
                 y="Retorno Setor",
-                title="Retorno Setor vs Retorno Mercado"
+                title="Retorno Setor vs Retorno Benchmark"
             )
 
             x = tab_corr["Retorno Mercado"]
@@ -461,18 +461,57 @@ with st.container(border = True):
             )
             st.plotly_chart(correlacao, use_container_width=True)
 
+            # --- Evolução histórica do setor vs mercado ---
 
+            # preços das empresas do setor
+            dados_setor = yf.download(empresas, period=periodo)["Close"]
+
+            # retorno médio do setor ao longo do tempo
+            retorno_setor_diario = dados_setor.pct_change().dropna()
+            retorno_setor_acumulado = (1 + retorno_setor_diario.mean(axis=1)).cumprod()
+
+            # preços do benchmark
+            dados_mercado = yf.download(ticker_mercado, period=periodo)["Close"]
+            retorno_mercado_diario = dados_mercado.pct_change().dropna()
+            retorno_mercado_acumulado = (1 + retorno_mercado_diario).cumprod()
+
+            # juntar séries
+            df_evolucao = pd.concat(
+                [retorno_setor_acumulado, retorno_mercado_acumulado],
+                axis=1,
+                join="inner"
+            )
+
+            df_evolucao.columns = ["Setor", "Benchmark"]
+
+            # gráfico de linha
+            graf_evolucao = px.line(
+                df_evolucao,
+                title="Evolução: Setor vs Mercado",
+                labels={"value": "Retorno Acumulado", "index": "Data"}
+            )
+
+            # fundo escuro (igual aos outros)
+            graf_evolucao.update_layout(
+                plot_bgcolor="#0F172A",
+                paper_bgcolor="#0F172A",
+                font_color="white"
+            )
+
+            st.plotly_chart(graf_evolucao, use_container_width=True)
 
 
 
 
         
 #beta ser selecionado por país e período ok 
+#para o beta dos eua, precisa ser usado as empresas do setor americano
 #container de indicadores ok 
 #container de wacc/capm
 #container de multiplos
 #container de Fleuriet
-#Container de mensagem automatica
+#Container de mensagem automatica com IA
+# Gerar um pdf do arquivo
     
 #Criar uma pagina chamada DFC, uma Taxa de Desconto e outra multiplos EBITDA elas servirão para explicar como foi feito o calculo do Valuation
 #Qual os valores da participação da divida e equity, para minimizar o wacc e maximizar o ev da empresa

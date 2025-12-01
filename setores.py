@@ -66,5 +66,40 @@ SETORES_EMPRESAS = {
         "KLBN11.SA",
         "RANI3.SA",
         "SUZB3.SA"
-    ]
-}
+    ],
+    "Saneamento":[
+        "AMBP3.SA",
+        "CSMG3.SA",
+        "ORVR3.SA",
+        "SAPR11.SA",
+        "SBSP3.SA"
+    ],
+    "Saúde":[
+        "BLAU3.SA",
+        "DASA3.SA",
+        "FLRY3.SA",
+        "HAPV3.SA",
+        "HYPE3.SA",
+        "KRSA3.SA",
+        "MATD3.SA",
+        "ODPV3.SA",
+        "ONCO3.SA",
+        "RDOR3.SA",
+        "VVEO3.SA"
+    ],
+    "TMT":[
+        "ALLD3.SA",
+        "BMOB3.SA",
+        "BRST3.SA",
+        "DESK3.SA",
+        "ELMD3.SA",
+        "FIQE3.SA",
+        "G2DI33.SA",
+        "INTB3.SA",
+        "LWSA3.SA",
+        "POSI3.SA",
+        "TIMS3.SA",
+        "TOTS3.SA",
+        "VIVT3.SA",
+        "ZENV.SA"
+    ]}

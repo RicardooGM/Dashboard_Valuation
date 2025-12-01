@@ -102,4 +102,22 @@ SETORES_EMPRESAS = {
         "TOTS3.SA",
         "VIVT3.SA",
         "ZENV.SA"
-    ]}
+    ],
+    "Transporte":[
+        "ARML3.SA",
+        "AZUL4.SA",
+        "ECOR3.SA",
+        "GOLL54.SA",
+        "HBSA3.SA",
+        "JSLG3.SA",
+        "MILS3.SA",
+        "MOTV3.SA",
+        "MOVI3.SA",
+        "PRNR3.SA",
+        "RAIL3.SA",
+        "RENT3.SA",
+        "SIMH3.SA",
+        "STBP3.SA",
+        "VAMO3.SA",
+    ]
+    }

@@ -192,15 +192,71 @@ with st.container(border = True):
         fluxo_caixa_acionista = fluxo_caixa_firma - divida_bruta
 
         fccaixa = pd.DataFrame({
-        "Item2": ["Lucro Líquido","(+) Depreciação", "(-) CAPEX","(-) Δ Capital de Giro ","(=) Fluxo de Caixa da Firma","Fluxo de Caixa do Acionista"],
+        "Item2": ["Lucro Líquido","(+) Depreciação", "(-) CAPEX","(-) Δ Capital de Giro","(=) Fluxo de Caixa da Firma","Fluxo de Caixa do Acionista"],
         "Valor2 (R$)": [lucro_liq,depreciacao,capex,var_capital_de_giro,fluxo_caixa_firma,fluxo_caixa_acionista]})
 
         st.table(fccaixa)
 
     with col17:
 
-        df_ffcaixa_grafico = fccaixa.set_index("Item2")[["Valor2 (R$)"]]
-        st.bar_chart(df_ffcaixa_grafico,sort = False)
+        ordem2 = [
+            "Lucro Líquido",
+            "(+) Depreciação",
+            "(-) CAPEX",
+            "(-) Δ Capital de Giro",
+            "(=) Fluxo de Caixa da Firma",
+        ]
+
+        fccaixa = fccaixa.set_index("Item2").loc[ordem2].reset_index()
+
+        items = fccaixa["Item2"].tolist()
+        valores_plot = []
+
+        # Tratamento correto dos valores para cascata
+        for item, valor in zip(fccaixa["Item2"], fccaixa["Valor2 (R$)"]):
+            if item in ["(+) Depreciação", "(-) CAPEX","(-) Δ Capital de Giro"]:
+                valores_plot.append(-abs(valor))  # sempre descendente
+            else:
+                valores_plot.append(valor)
+
+        measure = [
+            "relative",  # Lucro Líquido
+            "relative",  # Depreciação
+            "relative",  # capex
+            "relative",  # variação giro
+            "total",     # Fluxo de caixa da firma
+        ]
+
+
+        fig2 = go.Figure(go.Waterfall(
+            name="Fluxo de Caixa",
+            orientation="v",
+            measure=measure,
+            x=items,
+            y=valores_plot,
+            text=[f"R$ {abs(v):,.2f}" for v in valores_plot],
+            textposition="outside",
+            connector={"line": {"color": "rgb(120,120,120)"}},
+
+            increasing={"marker": {"color": "#2ECC71"}},  # verde
+            decreasing={"marker": {"color": "#E74C3C"}},  # vermelho
+            totals={"marker": {"color": "#3498DB"}}       # azul
+        ))
+
+        
+        fig2.update_layout(
+            title="Fluxo de Caixa",
+            showlegend=False,
+            plot_bgcolor="#0F172A",
+            paper_bgcolor="#0F172A",
+            font=dict(color="#F1F5F9", family="Poppins"),
+            xaxis=dict(tickangle=-15)
+        )
+
+        st.plotly_chart(fig2, use_container_width=True)
+
+        # df_ffcaixa_grafico = fccaixa.set_index("Item2")[["Valor2 (R$)"]]
+        #st.bar_chart(df_ffcaixa_grafico,sort = False)
 
 
 # -------- SEXTA LINHA --------        
@@ -398,14 +454,17 @@ with st.container(border = True):
             max_value=100.0,value=34.0,step=0.1,format="%.1f")
             aliquota = aliquota_pct/100
 
+
             with col2:
                 st.metric("Beta Médio Setorial", value=f"{beta_setor:.2f}")
 
-                beta_desalavancado = beta_setor/(1+(1-aliquota)*D_E)
+                beta_desalavancado = beta_setor/(1+(1-aliquota)*D_E)  #calcular depois o D/E Médio do setor e alterar no código(é possível fazer com scrapping)
                 
                 st.metric("Beta Desalavancado", value=f"{beta_desalavancado:.2f}")
 
-                #st.metric("Beta Realavancado", value=f"{beta_desalavancado:.2f}")
+                beta_realavancado = beta_desalavancado * (1+(1-aliquota)*D_E)
+
+                st.metric("Beta Realavancado", value=f"{beta_realavancado:.2f}")
 
     
     with col25:
@@ -435,6 +494,8 @@ with st.container(border = True):
             coef = np.polyfit(x, y, 1) # regressão linear (y = ax + b)
             linha_tendencia = coef[0] * x + coef[1]
 
+            correlacao_valor = np.corrcoef(x, y)[0, 1]
+            r2 = correlacao_valor ** 2
 
             correlacao.add_scatter(
             x=x,
@@ -443,7 +504,7 @@ with st.container(border = True):
             name="Regressão Linear"
             )
 
-            equacao_texto = f"y = {coef[0]:.3f}x + {coef[1]:.3f}"
+            equacao_texto = f"y = {coef[0]:.3f}x + {coef[1]:.3f}<br>R² = {r2:.3f}"
 
             correlacao.add_annotation(
                 x=0.05,
@@ -486,8 +547,8 @@ with st.container(border = True):
                 join="inner"
             )
 
-            df_evolucao.columns = ["Setor", "Benchmark"]
-
+            df_evolucao.columns = [setor, "Benchmark"]
+            
             # gráfico de linha
             graf_evolucao = px.line(
                 df_evolucao,
@@ -508,12 +569,32 @@ with st.container(border = True):
     with st.container(border = False):
 
         col1, col2 = st.columns(2,vertical_alignment = "top")
+        
         with col1:
             st.subheader("CAPM")
+
+            risco_livre = {
+            "Tesouro Direto",
+            "CDI",
+            "TBOND-US 10 Anos",
+            "NTN-B"
+            }
+
+            col1, col2 = st.columns(2,vertical_alignment = "top")
+            with col1:            
+                st.selectbox("Taxa Livre de Risco",list(risco_livre))
+            with col2:
+                st.metric(label = "Valor",value = f"{beta_setor:.2f}")
+            with col1:
+                st.number_input("Retorno de Mercado",max_value=100,min_value=0)
+                st.number_input("Risco-País")
+            
+
 
 
         
 #beta ser selecionado por país e período ok 
+#Adicionar no gráfico dos retornos - a porcentagem que eles valem
 #para o beta dos eua, precisa ser usado as empresas do setor americano
 #container de indicadores ok 
 #container de wacc/capm

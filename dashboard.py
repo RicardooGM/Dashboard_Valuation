@@ -322,6 +322,8 @@ with st.container(border = True):
 with st.container(border = True):
 
     st.subheader("Taxa de Desconto - WACC")
+
+    
     
 #primeira linha
 
@@ -333,7 +335,7 @@ with st.container(border = True):
 
         st.write("Calculo do Beta",unsafe_allow_html=False)
 
-        col1, col2 = st.columns(2,vertical_alignment = "center")
+        col1, col2 = st.columns(2,vertical_alignment = "top")
 
         with col1:
 
@@ -463,6 +465,8 @@ with st.container(border = True):
 
             # --- Evolução histórica do setor vs mercado ---
 
+    with st.container(border = True):
+                 
             # preços das empresas do setor
             dados_setor = yf.download(empresas, period=periodo)["Close"]
 
@@ -488,19 +492,24 @@ with st.container(border = True):
             graf_evolucao = px.line(
                 df_evolucao,
                 title="Evolução: Setor vs Mercado",
-                labels={"value": "Retorno Acumulado", "index": "Data"}
+                labels={"value": "Retorno Acumulado", "index": "Período"}
             )
 
             # fundo escuro (igual aos outros)
             graf_evolucao.update_layout(
                 plot_bgcolor="#0F172A",
                 paper_bgcolor="#0F172A",
-                font_color="white"
-            )
+                font_color="white")
 
             st.plotly_chart(graf_evolucao, use_container_width=True)
+         
 
 
+    with st.container(border = False):
+
+        col1, col2 = st.columns(2,vertical_alignment = "top")
+        with col1:
+            st.subheader("CAPM")
 
 
         

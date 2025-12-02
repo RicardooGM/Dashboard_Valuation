@@ -7,4 +7,6 @@ with st.container(border=True):
     st.title("Valuation DCF")
     st.write("Página de fluxo de caixa descontado")
 
-
+with st.popover("Formula"):
+    st.latex("Cost of Equity =  Rf + β(Rm – Rf) + Rp")
+    

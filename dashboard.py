@@ -377,7 +377,7 @@ with st.container(border = True):
 
 with st.container(border = True):
 
-    st.subheader("Taxa de Desconto - WACC")
+    st.subheader("Taxa de Desconto - WACC - Weighted Average Cost of Capital")
 
     
     
@@ -571,10 +571,10 @@ with st.container(border = True):
         col1, col2 = st.columns(2,vertical_alignment = "top")
         
         with col1:
-            st.subheader("CAPM")
+            st.subheader("CAPM - Cost of Equity (Ke)")
 
             risco_livre = {
-            "Tesouro Direto",
+            "Tesouro Direto 10 Anos",
             "CDI",
             "TBOND-US 10 Anos",
             "NTN-B"

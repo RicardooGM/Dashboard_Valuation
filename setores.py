@@ -22,7 +22,7 @@ SETORES_EMPRESAS = {
         "MRFG3.SA"
     ],
     "Bancos": [
-        "ITUB4.SA",     #ITAU
+        "ITUB3.SA",     #ITAU
         "BBDC4.SA",     #BRADESCO
         "SANB11.SA",    #SANTANDER
         "BBAS3.SA",     #BANCO DO BR

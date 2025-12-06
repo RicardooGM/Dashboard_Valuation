@@ -566,12 +566,14 @@ with st.container(border = True):
          
 
 
-    with st.container(border = False):
+    with st.container(border = True):
 
         col1, col2 = st.columns(2,vertical_alignment = "top")
         
         with col1:
             st.subheader("CAPM - Cost of Equity (Ke)")
+            with st.popover("Formula"):
+                st.latex("Cost of Equity =  Rf + β(Rm – Rf) + Rp")
 
             risco_livre = {
             "Tesouro Direto 10 Anos",
@@ -580,15 +582,91 @@ with st.container(border = True):
             "NTN-B"
             }
 
-            col1, col2 = st.columns(2,vertical_alignment = "top")
+            taxa_mercado = {
+                "Ibovespa": "^BVSP",
+                "SP500": "VOO",
+            }
+
+            col1, col3 = st.columns(2,vertical_alignment = "top")
             with col1:            
-                st.selectbox("Taxa Livre de Risco",list(risco_livre))
-            with col2:
+                st.selectbox("(Rf) - Taxa Livre de Risco",list(risco_livre))
+                # Selecionar mercado no Streamlit
+                mercado_escolhido = st.selectbox("(RM) - Retorno de Mercado", list(taxa_mercado))
+
+                # Obter ticker correspondente
+                ticker_mercados= taxa_mercado[mercado_escolhido]
+
+                # Baixar preços históricos do índice escolhido
+                dados_mercado = yf.download(ticker_mercados, period=periodo)["Close"].dropna()
+
+                # Função para calcular CAGR
+                # Calcular CAGR
+                preco_inicial = dados_mercado.iloc[0]
+                preco_final = dados_mercado.iloc[-1]
+                dias_totais = (dados_mercado.index[-1] - dados_mercado.index[0]).days
+                anos = dias_totais / 365
+
+                cagr_mercado = ((preco_final / preco_inicial) ** (1 / anos) - 1)*100
+                cagr_valor = cagr_mercado.item()
+
+
+            with col3:
                 st.metric(label = "Valor",value = f"{beta_setor:.2f}")
+                st.metric(label="CAGR do Mercado", value=f"{cagr_valor:.2f}")
+
             with col1:
-                st.number_input("Retorno de Mercado",max_value=100,min_value=0)
                 st.number_input("Risco-País")
             
+        with col2:
+            st.subheader("Security Market Line (SML)")
+
+            Rf = st.number_input("Retorno Livre de Risco (Rf)", value=0.05, step=0.01)
+            Rm = st.number_input("Retorno Esperado do Mercado (Rm)", value=0.12, step=0.01)
+
+            # Betas para plotar a SML
+            betas = np.linspace(0, 2, 100)
+
+            # Fórmula do CAPM: E(R) = Rf + beta * (Rm - Rf)
+            expected_returns = Rf + betas * (Rm - Rf)
+
+            # ---------------------
+            # Ponto especial: Beta = 1 (mercado)
+            # ---------------------
+            beta_market = 1
+            ER_market = Rf + beta_market * (Rm - Rf)
+
+            # ---------------------
+            # Gráfico
+            # ---------------------
+            fig, ax = plt.subplots(figsize=(8, 5))
+
+            # Reta da SML
+            ax.plot(betas, expected_returns, label="Security Market Line (SML)")
+
+            # Ponto no beta=1
+            ax.scatter(beta_market, ER_market, color="red")
+            ax.text(beta_market, ER_market, "  β = 1 (Mercado)", fontsize=10, verticalalignment="bottom")
+
+            # Linha horizontal e vertical do ponto
+            ax.axhline(ER_market, linestyle="--", linewidth=1)
+            ax.axvline(beta_market, linestyle="--", linewidth=1)
+
+            # Ponto Rf
+            ax.scatter(0, Rf, color="green")
+            ax.text(0, Rf, "  Rf", fontsize=10, verticalalignment="bottom")
+
+            # Labels
+            ax.set_xlabel("Beta (β)")
+            ax.set_ylabel("Retorno Esperado E(R)")
+            ax.set_title("Security Market Line (SML)")
+            ax.grid(alpha=0.3)
+
+            st.pyplot(fig)
+
+
+
+
+
 
 
 

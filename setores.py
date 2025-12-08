@@ -119,5 +119,21 @@ SETORES_EMPRESAS = {
         "SIMH3.SA",
         "STBP3.SA",
         "VAMO3.SA",
+    ],
+    "Varejo":[
+        "ALPA3.SA",
+        "AMER3.SA",
+        "AZZA3.SA",
+        "BHIA3.SA",
+        "CEAB3.SA",
+        "DMVF3.SA",
+        "ENJU3.SA",
+        "GRND3.SA",
+        "GUAR3.SA",
+    ],
+    "Supermercados":[
+        "PCAR3.SA",
+        "GMAT3.SA",
+        "ASAI3.SA",
     ]
     }

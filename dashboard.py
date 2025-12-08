@@ -1,3 +1,6 @@
+import os
+import requests
+from dotenv import load_dotenv
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -7,6 +10,11 @@ import numpy as np
 import plotly.graph_objects as go
 from setores import SETORES_EMPRESAS
 import plotly.express as px
+
+
+load_dotenv()
+FRED_API_KEY = os.getenv("FRED_API_KEY")
+
 
 st.set_page_config(layout="wide")
 # --- ESTILO PERSONALIZADO ---
@@ -377,7 +385,7 @@ with st.container(border = True):
 
 with st.container(border = True):
 
-    st.subheader("Taxa de Desconto - WACC - Weighted Average Cost of Capital")
+    st.subheader("Modelo CAPM")
 
     
     
@@ -575,12 +583,7 @@ with st.container(border = True):
             with st.popover("Formula"):
                 st.latex("Cost of Equity =  Rf + β(Rm – Rf) + Rp")
 
-            risco_livre = {
-            "Tesouro Direto 10 Anos",
-            "CDI",
-            "TBOND-US 10 Anos",
-            "NTN-B"
-            }
+            # Mostrar o resultado
 
             taxa_mercado = {
                 "Ibovespa": "^BVSP",
@@ -588,8 +591,42 @@ with st.container(border = True):
             }
 
             col1, col3 = st.columns(2,vertical_alignment = "top")
-            with col1:            
-                st.selectbox("(Rf) - Taxa Livre de Risco",list(risco_livre))
+
+            with col1:
+
+                modelo_capm = st.selectbox(
+                    "Modelo de CAPM",
+                    ["Mercado (Atual)", "Damodaran (Histórico)"]
+                )
+
+                rf_opcao = st.selectbox(
+                "Tipo de taxa livre de risco",
+                [
+                    "Tesouro Selic (Brasil)",
+                    "Tesouro IPCA+ (Brasil)",
+                    "US Treasury 10Y",
+                    "US T-Bill 3M"
+                ]
+                )
+
+                def obter_selic():
+                    url = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json"
+                    resp = requests.get(url)
+                    dados = resp.json()
+
+                    selic = float(dados[0]["valor"]) / 100
+                    return selic
+
+                # Valores de exemplo (podemos automatizar depois)
+                if rf_opcao == "Tesouro Selic (Brasil)":
+                    rf = obter_selic()
+                elif rf_opcao == "Tesouro IPCA+ (Brasil)":
+                    rf = 0.060
+                elif rf_opcao == "US Treasury 10Y":
+                    rf = 0.1
+                elif rf_opcao == "US T-Bill 3M":
+                    rf = 0.053       
+
                 # Selecionar mercado no Streamlit
                 mercado_escolhido = st.selectbox("(RM) - Retorno de Mercado", list(taxa_mercado))
 
@@ -611,63 +648,154 @@ with st.container(border = True):
 
 
             with col3:
-                st.metric(label = "Valor",value = f"{beta_setor:.2f}")
+                st.metric("Anos de Calculo",periodo)
+                st.metric("(Rf) - Taxa Livre de Risco",f"{rf:.2%}")
                 st.metric(label="CAGR do Mercado", value=f"{cagr_valor:.2f}")
 
             with col1:
                 st.number_input("Risco-País")
             
         with col2:
-            st.subheader("Security Market Line (SML)")
 
-            Rf = st.number_input("Retorno Livre de Risco (Rf)", value=0.05, step=0.01)
-            Rm = st.number_input("Retorno Esperado do Mercado (Rm)", value=0.12, step=0.01)
+                st.subheader("Security Market Line (SML)")
 
-            # Betas para plotar a SML
-            betas = np.linspace(0, 2, 100)
+                Rf = st.number_input("Retorno Livre de Risco (Rf)", value=0.05, step=0.01)
+                Rm = st.number_input("Retorno Esperado do Mercado (Rm)", value=0.12, step=0.01)
 
-            # Fórmula do CAPM: E(R) = Rf + beta * (Rm - Rf)
-            expected_returns = Rf + betas * (Rm - Rf)
+                # Betas para plotar a SML
+                betas = np.linspace(0, 2, 100)
 
-            # ---------------------
-            # Ponto especial: Beta = 1 (mercado)
-            # ---------------------
-            beta_market = 1
-            ER_market = Rf + beta_market * (Rm - Rf)
+                # Fórmula do CAPM: E(R) = Rf + beta * (Rm - Rf)
+                expected_returns = Rf + betas * (Rm - Rf)
 
-            # ---------------------
-            # Gráfico
-            # ---------------------
-            fig, ax = plt.subplots(figsize=(8, 5))
+                # ---------------------
+                # Ponto especial: Beta = 1 (mercado)
+                # ---------------------
+                beta_market = 1
+                ER_market = Rf + beta_market * (Rm - Rf)
 
-            # Reta da SML
-            ax.plot(betas, expected_returns, label="Security Market Line (SML)")
+                # ---------------------
+                # Gráfico
+                # ---------------------
+                fig, ax = plt.subplots(figsize=(8, 5))
 
-            # Ponto no beta=1
-            ax.scatter(beta_market, ER_market, color="red")
-            ax.text(beta_market, ER_market, "  β = 1 (Mercado)", fontsize=10, verticalalignment="bottom")
+                # Reta da SML
+                ax.plot(betas, expected_returns, label="Security Market Line (SML)")
 
-            # Linha horizontal e vertical do ponto
-            ax.axhline(ER_market, linestyle="--", linewidth=1)
-            ax.axvline(beta_market, linestyle="--", linewidth=1)
+                # Ponto no beta=1
+                ax.scatter(beta_market, ER_market, color="red")
+                ax.text(beta_market, ER_market, "  β = 1 (Mercado)", fontsize=10, verticalalignment="bottom")
 
-            # Ponto Rf
-            ax.scatter(0, Rf, color="green")
-            ax.text(0, Rf, "  Rf", fontsize=10, verticalalignment="bottom")
+                # Linha horizontal e vertical do ponto
+                ax.axhline(ER_market, linestyle="--", linewidth=1)
+                ax.axvline(beta_market, linestyle="--", linewidth=1)
 
-            # Labels
-            ax.set_xlabel("Beta (β)")
-            ax.set_ylabel("Retorno Esperado E(R)")
-            ax.set_title("Security Market Line (SML)")
-            ax.grid(alpha=0.3)
+                # Ponto Rf
+                ax.scatter(0, Rf, color="green")
+                ax.text(0, Rf, "  Rf", fontsize=10, verticalalignment="bottom")
 
-            st.pyplot(fig)
+                # Labels
+                ax.set_xlabel("Beta (β)")
+                ax.set_ylabel("Retorno Esperado E(R)")
+                ax.set_title("Security Market Line (SML)")
+                ax.grid(alpha=0.3)
+
+                st.pyplot(fig)
+
+    with st.container(border = False): 
+        st.subheader("CAPM - DAMODARAN")
+
+        col1, col2 = st.columns(2,vertical_alignment="top")
 
 
+        df_damodaran = pd.read_excel("damodaran_data.xlsx")
+        df_beta = pd.read_excel("damodaran_beta.xlsx")
+
+        rm_damodaran = df_damodaran["S&P 500 (includes dividends)"].mean()
+        rf_damodaran = df_damodaran["US T. Bond (10-year)"].mean()
+
+        # Criar lista de setores
+        setores = df_beta["Industry Name"].unique()
+
+        with col1:
+
+            col1, col3 = st.columns(2,vertical_alignment="top")
+            with col1:
+
+                # Selectbox
+                setor_escolhido = st.selectbox(
+                    "Selecione o setor (Damodaran)",
+                    setores
+                )
+
+                # Filtrar a linha do setor escolhido
+                linha = df_beta[df_beta["Industry Name"] == setor_escolhido].iloc[0]
 
 
+                # Extrair os valores
+                beta_damodaran = linha["Beta "]
+                de_ratio = linha["D/E Ratio"]
+                tax_rate = linha["Effective Tax rate"]
+                beta_unlevered = linha["Unlevered beta"]
+                #beta_realavancado = beta_unlevered*(1+(1-)*)
 
 
+                st.metric("Beta (Damodaran)", f"{beta_damodaran:.2f}")
+                st.metric("D/E", f"{de_ratio:.2f}")
+                st.metric("Taxa de Imposto", f"{tax_rate:.2%}")
+                st.metric("Beta Desalavancado", f"{beta_unlevered:.2f}")
+                st.metric("Rm (Damodaran)", f"{rm_damodaran:.2%}")
+                st.metric("Rf (Damodaran)", f"{rf_damodaran:.2%}")
+
+            df = pd.read_excel("damodaran_data.xlsx")
+            # Copiar só as colunas usadas e definir Year como índice
+            # Selecionar colunas e usar o Year como índice
+            df["S&P 500 (includes dividends)"] = df["S&P 500 (includes dividends)"] * 100
+            df["US T. Bond (10-year)"] = df["US T. Bond (10-year)"] * 100
+
+        with col2:
+            # Criar o gráfico
+            fig = px.line(
+                df,
+                x="Year",
+                y=["S&P 500 (includes dividends)", "US T. Bond (10-year)"],
+                title="Retornos Anuais - S&P 500 vs T-Bond 10Y",
+                labels={
+                    "value": "Retorno (%)",
+                    "variable": "Ativo"
+                }
+            )
+
+            # Deixar o layout parecido com Excel
+            fig.update_traces(line=dict(width=2))
+            fig.update_layout(
+                yaxis_tickformat=".1f",
+                xaxis_title="Ano",
+                yaxis_title="Retorno (%)",
+                legend_title_text=""
+            )
+
+            # Mostrar no Streamlit
+            st.plotly_chart(fig, use_container_width=True)
+
+            col_sp = "S&P 500 (includes dividends)"
+            col_tbond = "US T. Bond (10-year)"
+
+            # Criar gráfico de dispersão com linha de tendência
+            fig = px.scatter(
+                df,
+                x=col_sp,
+                y=col_tbond,
+                trendline="ols",  # linha de regressão
+                title="Correlação: S&P 500 vs T-Bond 10Y",
+                labels={
+                    col_sp: "Retorno S&P 500",
+                    col_tbond: "Retorno T-Bond 10Y"
+                }
+            )
+
+            # Mostrar no Streamlit
+            st.plotly_chart(fig, use_container_width=True)
 
 
         

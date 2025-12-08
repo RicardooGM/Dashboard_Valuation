@@ -702,10 +702,10 @@ with st.container(border = True):
 
                 st.pyplot(fig)
 
-    with st.container(border = False): 
+    with st.container(border = True): 
         st.subheader("CAPM - DAMODARAN")
 
-        col1, col2 = st.columns(2,vertical_alignment="top")
+        col1, col2,col3,col4,col5 = st.columns(5,vertical_alignment="top")
 
 
         df_damodaran = pd.read_excel("damodaran_data.xlsx")
@@ -720,10 +720,7 @@ with st.container(border = True):
         paises = df_riscopais["Country"].unique()
 
         with col1:
-            with st.container(border = True):    
-                col1, col3 = st.columns(2,vertical_alignment="top")
-                with col1:
-
+               
                     # Selectbox
                     setor_escolhido = st.selectbox(
                         "Selecione o setor (Damodaran)",
@@ -739,26 +736,61 @@ with st.container(border = True):
                     de_ratio = linha["D/E Ratio"]
                     tax_rate = linha["Effective Tax rate"]
                     beta_unlevered = linha["Unlevered beta"]
-                    #beta_realavancado = beta_unlevered*(1+(1-)*)
-
-            
+                    
+    
                     st.metric("Beta (Damodaran)", f"{beta_damodaran:.2f}")
-                    st.metric("Beta Desalavancado", f"{beta_unlevered:.2f}")
                     
-
-                with col3:
-                    
+                
+        with col2:            
                     st.metric("Taxa de Imposto", f"{tax_rate:.2%}")
+                    st.metric("Beta Desalavancado", f"{beta_unlevered:.2f}")
+        with col3:
                     st.metric("D/E", f"{de_ratio:.2f}")
-                        
+        with col4:
+                    st.metric("D/E Empresa",f"{D_E:.2f}")
+        with col5:
+                    aliquota_emp = st.number_input("Imposto Empresa",min_value = 0.0, max_value = 1.0)
+        with col3: 
+                    beta_realavancado = beta_unlevered*(1+(1-D_E)*aliquota_emp)
+                    st.metric("Beta Realavancado",f"{beta_realavancado:.2f}")
 
-                df = pd.read_excel("damodaran_data.xlsx")
-                # Copiar só as colunas usadas e definir Year como índice
-                # Selecionar colunas e usar o Year como índice
-                df["S&P 500 (includes dividends)"] = df["S&P 500 (includes dividends)"] * 100
-                df["US T. Bond (10-year)"] = df["US T. Bond (10-year)"] * 100
+                    df = pd.read_excel("damodaran_data.xlsx")
+                    # Copiar só as colunas usadas e definir Year como índice
+                    # Selecionar colunas e usar o Year como índice
+                    df["S&P 500 (includes dividends)"] = df["S&P 500 (includes dividends)"] * 100
+                    df["US T. Bond (10-year)"] = df["US T. Bond (10-year)"] * 100
+
+        col1,col2,col3,col4 = st.columns(4)
+        with col1:
+            st.write("Calculando o CAPM")         
+            st.latex("CAPM =  Rf + β(Rm – Rf) + Rp ")
+
+        col1, col2,col3,col4,col5 = st.columns(5,vertical_alignment="top")
+
+        with col1:
+                
+                pais_escolhido = st.selectbox(
+                        "Selecione o País (Damodaran)",
+                        paises
+                    )
+                    
+                linha2 = df_riscopais[df_riscopais["Country"] == pais_escolhido].iloc[0]
+                country_risco = linha2["CRP"]
 
         with col2:
+                st.metric("Risco-Pais", f"{country_risco:.2%}")
+        with col3:
+                st.metric("Rm (Damodaran)", f"{rm_damodaran:.2%}")
+        with col4:
+                st.metric("Rf (Damodaran)", f"{rf_damodaran:.2%}")
+        with col5:
+                capm = rf_damodaran + beta_realavancado*(rm_damodaran - rf_damodaran) + country_risco
+                st.metric("CAPM",f"{capm:.2%}")
+
+        col1, col2 = st.columns(2,vertical_alignment="top")
+
+        with col1:
+
             with st.container(border = False):
                 # Criar o gráfico
                 fig = px.line(
@@ -783,25 +815,78 @@ with st.container(border = True):
 
                 # Mostrar no Streamlit
                 st.plotly_chart(fig, use_container_width=True)
-        
-        col1, col2 = st.columns(2,vertical_alignment="top")
 
-        with col1:
-            with st.container(border = True):
-                st.write("coluna")
-                pais_escolhido = st.selectbox(
-                        "Selecione o País (Damodaran)",
-                        paises
-                    )
-                    
-                linha2 = df_riscopais[df_riscopais["Country"] == pais_escolhido].iloc[0]
-                country_risco = linha2["CRP"]
-                st.metric("Risco-Pais", country_risco)
-                st.metric("Rm (Damodaran)", f"{rm_damodaran:.2%}")
-                st.metric("Rf (Damodaran)", f"{rf_damodaran:.2%}")
+        with col2:       
 
-                capm = rf_damodaran + beta_damodaran*(rm_damodaran - rf_damodaran) + country_risco
-                st.write(capm)
+                betas = np.linspace(0, 2.5, 100)
+                er = rf_damodaran + betas * (rm_damodaran - rf_damodaran)
+
+                df = pd.DataFrame({
+                    "Beta": betas,
+                    "Retorno Esperado": er
+                })
+
+                # --------------------------------------------------
+                # Ponto do setor/empresa
+                # --------------------------------------------------
+                er_empresa = rf_damodaran + beta_damodaran * (rm_damodaran - rf_damodaran)
+                df_point = pd.DataFrame({
+                    "Beta": [beta_damodaran],
+                    "Retorno Esperado": [er_empresa]
+                })
+
+                # --------------------------------------------------
+                # Criar gráfico com Plotly Express
+                # --------------------------------------------------
+                fig = px.line(
+                    df,
+                    x="Beta",
+                    y="Retorno Esperado",
+                    title="Security Market Line (SML)",
+                    labels={"Beta": "Beta (β)", "Retorno Esperado": "Retorno Esperado E(R)"}
+                )
+
+                # Adicionar ponto do ativo/setor
+                fig.add_scatter(
+                    x=df_point["Beta"],
+                    y=df_point["Retorno Esperado"],
+                    mode="markers",
+                    marker=dict(size=14),
+                    name="Beta Damodaran"
+                )
+
+                # --------------------------------------------------
+                # Linha horizontal (Rf)
+                # --------------------------------------------------
+                fig.add_hline(
+                    y=rf_damodaran,
+                    line_dash="dash",
+                    annotation_text="Rf (Taxa Livre de Risco)",
+                    annotation_position="bottom right"
+                )
+
+                # --------------------------------------------------
+                # Linha vertical em Beta = 1 (mercado)
+                # --------------------------------------------------
+                fig.add_vline(
+                    x=1,
+                    line_dash="dash",
+                    annotation_text="β = 1 (Mercado)",
+                    annotation_position="top"
+                )
+
+                # --------------------------------------------------
+                # Ajustes visuais
+                # --------------------------------------------------
+                fig.update_layout(
+                    template="plotly_white",
+                    hovermode="x unified"
+                )
+
+                # --------------------------------------------------
+                # Mostrar no Streamlit
+                # --------------------------------------------------
+                st.plotly_chart(fig, use_container_width=True)
         
 #beta ser selecionado por país e período ok 
 #Adicionar no gráfico dos retornos - a porcentagem que eles valem

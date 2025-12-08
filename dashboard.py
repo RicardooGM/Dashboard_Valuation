@@ -710,94 +710,98 @@ with st.container(border = True):
 
         df_damodaran = pd.read_excel("damodaran_data.xlsx")
         df_beta = pd.read_excel("damodaran_beta.xlsx")
+        df_riscopais = pd.read_excel("damodaran_crp.xlsx")
 
         rm_damodaran = df_damodaran["S&P 500 (includes dividends)"].mean()
         rf_damodaran = df_damodaran["US T. Bond (10-year)"].mean()
 
         # Criar lista de setores
         setores = df_beta["Industry Name"].unique()
+        paises = df_riscopais["Country"].unique()
 
         with col1:
+            with st.container(border = True):    
+                col1, col3 = st.columns(2,vertical_alignment="top")
+                with col1:
 
-            col1, col3 = st.columns(2,vertical_alignment="top")
-            with col1:
+                    # Selectbox
+                    setor_escolhido = st.selectbox(
+                        "Selecione o setor (Damodaran)",
+                        setores
+                    )
 
-                # Selectbox
-                setor_escolhido = st.selectbox(
-                    "Selecione o setor (Damodaran)",
-                    setores
+                    # Filtrar a linha do setor escolhido
+                    linha = df_beta[df_beta["Industry Name"] == setor_escolhido].iloc[0]
+
+
+                    # Extrair os valores
+                    beta_damodaran = linha["Beta "]
+                    de_ratio = linha["D/E Ratio"]
+                    tax_rate = linha["Effective Tax rate"]
+                    beta_unlevered = linha["Unlevered beta"]
+                    #beta_realavancado = beta_unlevered*(1+(1-)*)
+
+            
+                    st.metric("Beta (Damodaran)", f"{beta_damodaran:.2f}")
+                    st.metric("Beta Desalavancado", f"{beta_unlevered:.2f}")
+                    
+
+                with col3:
+                    
+                    st.metric("Taxa de Imposto", f"{tax_rate:.2%}")
+                    st.metric("D/E", f"{de_ratio:.2f}")
+                        
+
+                df = pd.read_excel("damodaran_data.xlsx")
+                # Copiar só as colunas usadas e definir Year como índice
+                # Selecionar colunas e usar o Year como índice
+                df["S&P 500 (includes dividends)"] = df["S&P 500 (includes dividends)"] * 100
+                df["US T. Bond (10-year)"] = df["US T. Bond (10-year)"] * 100
+
+        with col2:
+            with st.container(border = False):
+                # Criar o gráfico
+                fig = px.line(
+                    df,
+                    x="Year",
+                    y=["S&P 500 (includes dividends)", "US T. Bond (10-year)"],
+                    title="Retornos Anuais - S&P 500 vs T-Bond 10Y",
+                    labels={
+                        "value": "Retorno (%)",
+                        "variable": "Ativo"
+                    }
                 )
 
-                # Filtrar a linha do setor escolhido
-                linha = df_beta[df_beta["Industry Name"] == setor_escolhido].iloc[0]
+                # Deixar o layout parecido com Excel
+                fig.update_traces(line=dict(width=2))
+                fig.update_layout(
+                    yaxis_tickformat=".1f",
+                    xaxis_title="Ano",
+                    yaxis_title="Retorno (%)",
+                    legend_title_text=""
+                )
 
+                # Mostrar no Streamlit
+                st.plotly_chart(fig, use_container_width=True)
+        
+        col1, col2 = st.columns(2,vertical_alignment="top")
 
-                # Extrair os valores
-                beta_damodaran = linha["Beta "]
-                de_ratio = linha["D/E Ratio"]
-                tax_rate = linha["Effective Tax rate"]
-                beta_unlevered = linha["Unlevered beta"]
-                #beta_realavancado = beta_unlevered*(1+(1-)*)
-
-
-                st.metric("Beta (Damodaran)", f"{beta_damodaran:.2f}")
-                st.metric("D/E", f"{de_ratio:.2f}")
-                st.metric("Taxa de Imposto", f"{tax_rate:.2%}")
-                st.metric("Beta Desalavancado", f"{beta_unlevered:.2f}")
+        with col1:
+            with st.container(border = True):
+                st.write("coluna")
+                pais_escolhido = st.selectbox(
+                        "Selecione o País (Damodaran)",
+                        paises
+                    )
+                    
+                linha2 = df_riscopais[df_riscopais["Country"] == pais_escolhido].iloc[0]
+                country_risco = linha2["CRP"]
+                st.metric("Risco-Pais", country_risco)
                 st.metric("Rm (Damodaran)", f"{rm_damodaran:.2%}")
                 st.metric("Rf (Damodaran)", f"{rf_damodaran:.2%}")
 
-            df = pd.read_excel("damodaran_data.xlsx")
-            # Copiar só as colunas usadas e definir Year como índice
-            # Selecionar colunas e usar o Year como índice
-            df["S&P 500 (includes dividends)"] = df["S&P 500 (includes dividends)"] * 100
-            df["US T. Bond (10-year)"] = df["US T. Bond (10-year)"] * 100
-
-        with col2:
-            # Criar o gráfico
-            fig = px.line(
-                df,
-                x="Year",
-                y=["S&P 500 (includes dividends)", "US T. Bond (10-year)"],
-                title="Retornos Anuais - S&P 500 vs T-Bond 10Y",
-                labels={
-                    "value": "Retorno (%)",
-                    "variable": "Ativo"
-                }
-            )
-
-            # Deixar o layout parecido com Excel
-            fig.update_traces(line=dict(width=2))
-            fig.update_layout(
-                yaxis_tickformat=".1f",
-                xaxis_title="Ano",
-                yaxis_title="Retorno (%)",
-                legend_title_text=""
-            )
-
-            # Mostrar no Streamlit
-            st.plotly_chart(fig, use_container_width=True)
-
-            col_sp = "S&P 500 (includes dividends)"
-            col_tbond = "US T. Bond (10-year)"
-
-            # Criar gráfico de dispersão com linha de tendência
-            fig = px.scatter(
-                df,
-                x=col_sp,
-                y=col_tbond,
-                trendline="ols",  # linha de regressão
-                title="Correlação: S&P 500 vs T-Bond 10Y",
-                labels={
-                    col_sp: "Retorno S&P 500",
-                    col_tbond: "Retorno T-Bond 10Y"
-                }
-            )
-
-            # Mostrar no Streamlit
-            st.plotly_chart(fig, use_container_width=True)
-
-
+                capm = rf_damodaran + beta_damodaran*(rm_damodaran - rf_damodaran) + country_risco
+                st.write(capm)
         
 #beta ser selecionado por país e período ok 
 #Adicionar no gráfico dos retornos - a porcentagem que eles valem

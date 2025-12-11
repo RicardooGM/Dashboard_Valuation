@@ -112,7 +112,7 @@ with st.container(border = True):
         lucro_bruto = receita + custos
 
         df_dre = pd.DataFrame({
-        "Item": ["Receita líquida","(-) Custos", "(=) Lucro Bruto","(-) Despesas","(=) EBITDA", "(-) Impostos","Lucro Líquido"],
+        "Item": ["Receita líquida","(-) Custos", "(=) Lucro Bruto","(-) Despesas","(=) EBITDA", "(-) Impostos","(=) Lucro Líquido"],
         "Valor (R$)": [receita,custos,lucro_bruto,despesas,ebitda,imposto,lucro_liq]})
 
         df_dre["Variação da R.L %"] = [
@@ -137,7 +137,7 @@ with st.container(border = True):
             "(-) Despesas",
             "(=) EBITDA",
             "(-) Impostos",
-            "Lucro Líquido"
+            "(=) Lucro Líquido"
         ]
 
         df_dre = df_dre.set_index("Item").loc[ordem].reset_index()
@@ -703,13 +703,14 @@ with st.container(border = True):
                 st.pyplot(fig)
 
     with st.container(border = True): 
-        st.subheader("CAPM - DAMODARAN")
+        st.subheader("CAPM - DAMODARAN - Mercado Emergentes")
+        regiao = st.selectbox("Selecione a região",["US","Mercados Emergentes"])
 
         col1, col2,col3,col4,col5 = st.columns(5,vertical_alignment="top")
-
-
+    
         df_damodaran = pd.read_excel("damodaran_data.xlsx")
         df_beta = pd.read_excel("damodaran_beta.xlsx")
+        df_beta_us = pd.read_excel("damodaran_beta_us.xlsx")
         df_riscopais = pd.read_excel("damodaran_crp.xlsx")
 
         rm_damodaran = df_damodaran["S&P 500 (includes dividends)"].mean()
@@ -718,17 +719,26 @@ with st.container(border = True):
         # Criar lista de setores
         setores = df_beta["Industry Name"].unique()
         paises = df_riscopais["Country"].unique()
+        setores_us = df_beta_us["Industry Name"].unique()
 
         with col1:
-               
+                    
+                    if regiao == "US":
+                        setor = st.selectbox("Selecione o setor (US)", setores_us)
+                        df_setor = df_beta_us[df_beta_us["Industry Name"] == setor].iloc[0]
+
+                    else:
+                        setor = st.selectbox("Selecione o setor (Mercados Emergentes)", setores)
+                        df_setor = df_beta[df_beta["Industry Name"] == setor].iloc[0]
+
                     # Selectbox
-                    setor_escolhido = st.selectbox(
-                        "Selecione o setor (Damodaran)",
-                        setores
-                    )
+                    #setor_escolhido = st.selectbox(
+                        #"Selecione o setor (Damodaran)",
+                        #setores
+                    #)
 
                     # Filtrar a linha do setor escolhido
-                    linha = df_beta[df_beta["Industry Name"] == setor_escolhido].iloc[0]
+                    linha = df_beta[df_beta["Industry Name"] == setor].iloc[0]
 
 
                     # Extrair os valores
@@ -736,23 +746,47 @@ with st.container(border = True):
                     de_ratio = linha["D/E Ratio"]
                     tax_rate = linha["Effective Tax rate"]
                     beta_unlevered = linha["Unlevered beta"]
-                    
-    
-                    st.metric("Beta (Damodaran)", f"{beta_damodaran:.2f}")
-                    
+
+                    linha2 = df_beta_us[df_beta_us["Industry Name"] == setor].iloc[0]
+
+                    # Extrair os valores
+                    beta_damodaran_us = linha2["Beta "]
+                    de_ratio_us = linha2["D/E Ratio"]
+                    tax_rate_us = linha2["Effective Tax rate"]
+                    beta_unlevered_us = linha2["Unlevered beta"]
+
+                    if regiao == "US":
+                        st.metric("Beta (Damodaran)", f"{beta_damodaran_us:.2f}")
+                    else:
+                        st.metric("Beta (Damodaran)", f"{beta_damodaran:.2f}")
                 
-        with col2:            
-                    st.metric("Taxa de Imposto", f"{tax_rate:.2%}")
-                    st.metric("Beta Desalavancado", f"{beta_unlevered:.2f}")
+        with col2:  
+                    if regiao == "US":               
+                        st.metric("Taxa de Imposto", f"{tax_rate_us:.2%}")
+                    else:
+                        st.metric("Taxa de Imposto", f"{tax_rate:.2%}")
+                    
+                    if regiao == "US":
+                        st.metric("Beta Desalavancado", f"{beta_unlevered_us:.2f}")
+                    else:
+                        st.metric("Beta Desalavancado", f"{beta_unlevered:.2f}")
+
         with col3:
-                    st.metric("D/E", f"{de_ratio:.2f}")
+                    if regiao == "US":
+                        st.metric("D/E", f"{de_ratio_us:.2f}")
+                    else:
+                        st.metric("D/E", f"{de_ratio:.2f}") 
         with col4:
                     st.metric("D/E Empresa",f"{D_E:.2f}")
         with col5:
                     aliquota_emp = st.number_input("Imposto Empresa",min_value = 0.0, max_value = 1.0)
         with col3: 
-                    beta_realavancado = beta_unlevered*(1+(1-D_E)*aliquota_emp)
-                    st.metric("Beta Realavancado",f"{beta_realavancado:.2f}")
+                    if regiao == "US":
+                        beta_realavancado_us = beta_unlevered_us *(1+(1-aliquota_emp)*D_E)
+                        st.metric("Beta Realavancado",f"{beta_realavancado_us:.2f}")
+                    else:
+                        beta_realavancado = beta_unlevered *(1+(1-aliquota_emp)*D_E)
+                        st.metric("Beta Realavancado",f"{beta_realavancado:.2f}")
 
                     df = pd.read_excel("damodaran_data.xlsx")
                     # Copiar só as colunas usadas e definir Year como índice
@@ -760,7 +794,7 @@ with st.container(border = True):
                     df["S&P 500 (includes dividends)"] = df["S&P 500 (includes dividends)"] * 100
                     df["US T. Bond (10-year)"] = df["US T. Bond (10-year)"] * 100
 
-        col1,col2,col3,col4 = st.columns(4)
+        col1,col2,= st.columns(2)
         with col1:
             st.write("Calculando o CAPM")         
             st.latex("CAPM =  Rf + β(Rm – Rf) + Rp ")
@@ -862,7 +896,8 @@ with st.container(border = True):
                     y=rf_damodaran,
                     line_dash="dash",
                     annotation_text="Rf (Taxa Livre de Risco)",
-                    annotation_position="bottom right"
+                    annotation_position="bottom right",
+                    line_color="white",
                 )
 
                 # --------------------------------------------------
@@ -872,7 +907,8 @@ with st.container(border = True):
                     x=1,
                     line_dash="dash",
                     annotation_text="β = 1 (Mercado)",
-                    annotation_position="top"
+                    annotation_position="top",
+                    line_color="white",
                 )
 
                 # --------------------------------------------------
@@ -880,7 +916,7 @@ with st.container(border = True):
                 # --------------------------------------------------
                 fig.update_layout(
                     template="plotly_white",
-                    hovermode="x unified"
+                    hovermode="x unified",
                 )
 
                 # --------------------------------------------------

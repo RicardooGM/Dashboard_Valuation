@@ -470,7 +470,7 @@ with st.container(border = True):
                 
                 st.metric("Beta Desalavancado", value=f"{beta_desalavancado:.2f}")
 
-                beta_realavancado = beta_desalavancado * (1+(1-aliquota)*D_E)
+                beta_realavancado = beta_desalavancado*(1+(1-aliquota)*D_E)
 
                 st.metric("Beta Realavancado", value=f"{beta_realavancado:.2f}")
 
@@ -581,7 +581,7 @@ with st.container(border = True):
         with col1:
             st.subheader("CAPM - Cost of Equity (Ke)")
             with st.popover("Formula"):
-                st.latex("Cost of Equity =  Rf + β(Rm – Rf) + Rp")
+                st.latex("CAPM =  Rf + β(Rm – Rf) + Rp")
 
             # Mostrar o resultado
 
@@ -649,58 +649,99 @@ with st.container(border = True):
 
             with col3:
                 st.metric("Anos de Calculo",periodo)
-                st.metric("(Rf) - Taxa Livre de Risco",f"{rf:.2%}")
-                st.metric(label="CAGR do Mercado", value=f"{cagr_valor:.2f}")
+                st.metric("Rf Taxa Livre de Risco",f"{rf:.2%}")
+                st.metric(label="Rm - CAGR do Mercado", value=f"{cagr_valor:.2f}")
 
             with col1:
-                st.number_input("Risco-País")
+                risco_pais1 = st.number_input("Risco-País (em %)")
+            with col3:
+                capm1 = (rf + beta_realavancado*(cagr_valor - rf) + risco_pais1)/100
+                st.metric("CAPM",f"{capm1:.2%}")
             
         with col2:
 
                 st.subheader("Security Market Line (SML)")
+                # --------------------------------------------------
+                # Linha do gráfico (mantendo sua fórmula)
+                # --------------------------------------------------
+                betas = np.linspace(0, 2.5, 100)
+                er = rf + betas * (cagr_valor - rf) + risco_pais1
 
-                Rf = st.number_input("Retorno Livre de Risco (Rf)", value=0.05, step=0.01)
-                Rm = st.number_input("Retorno Esperado do Mercado (Rm)", value=0.12, step=0.01)
+                df1 = pd.DataFrame({
+                    "Beta": betas,
+                    "Retorno Esperado": er
+                })
 
-                # Betas para plotar a SML
-                betas = np.linspace(0, 2, 100)
+                # --------------------------------------------------
+                # Ponto da empresa (mantendo suas variáveis)
+                # --------------------------------------------------
+                er_empresa = rf + beta_desalavancado * (cagr_valor - rf) + risco_pais1
 
-                # Fórmula do CAPM: E(R) = Rf + beta * (Rm - Rf)
-                expected_returns = Rf + betas * (Rm - Rf)
+                df_point = pd.DataFrame({
+                    "Beta": [beta_desalavancado],
+                    "Retorno Esperado": [er_empresa]
+                })
 
-                # ---------------------
-                # Ponto especial: Beta = 1 (mercado)
-                # ---------------------
-                beta_market = 1
-                ER_market = Rf + beta_market * (Rm - Rf)
+                # --------------------------------------------------
+                # Gráfico (MESMO PADRÃO do SML Damodaran)
+                # --------------------------------------------------
+                fig = px.line(
+                    df1,
+                    x="Beta",
+                    y="Retorno Esperado",
+                    title="Security Market Line (SML)",
+                    labels={
+                        "Beta": "Beta (β)",
+                        "Retorno Esperado": "Retorno Esperado E(R)"
+                    }
+                )
 
-                # ---------------------
-                # Gráfico
-                # ---------------------
-                fig, ax = plt.subplots(figsize=(8, 5))
+                # Ponto do ativo
+                fig.add_scatter(
+                    x=df_point["Beta"],
+                    y=df_point["Retorno Esperado"],
+                    mode="markers",
+                    marker=dict(size=14),
+                    name="Empresa / Setor"
+                )
 
-                # Reta da SML
-                ax.plot(betas, expected_returns, label="Security Market Line (SML)")
+                # --------------------------------------------------
+                # Linha horizontal (Rf)
+                # --------------------------------------------------
+                fig.add_hline(
+                    y=rf,
+                    line_dash="dash",
+                    annotation_text="Rf (Taxa Livre de Risco)",
+                    annotation_position="bottom right",
+                    line_color="white",
+                )
 
-                # Ponto no beta=1
-                ax.scatter(beta_market, ER_market, color="red")
-                ax.text(beta_market, ER_market, "  β = 1 (Mercado)", fontsize=10, verticalalignment="bottom")
+                # --------------------------------------------------
+                # Linha vertical (β = 1)
+                # --------------------------------------------------
+                fig.add_vline(
+                    x=1,
+                    line_dash="dash",
+                    annotation_text="β = 1 (Mercado)",
+                    annotation_position="top",
+                    line_color="white",
+                )
 
-                # Linha horizontal e vertical do ponto
-                ax.axhline(ER_market, linestyle="--", linewidth=1)
-                ax.axvline(beta_market, linestyle="--", linewidth=1)
+                # --------------------------------------------------
+                # Layout
+                # --------------------------------------------------
+                fig.update_layout(
+                    template="plotly_white",
+                    hovermode="x unified",
+                )
 
-                # Ponto Rf
-                ax.scatter(0, Rf, color="green")
-                ax.text(0, Rf, "  Rf", fontsize=10, verticalalignment="bottom")
+                fig.update_layout(
+                plot_bgcolor="#0F172A",
+                paper_bgcolor="#0F172A",
+                font_color="white")
 
-                # Labels
-                ax.set_xlabel("Beta (β)")
-                ax.set_ylabel("Retorno Esperado E(R)")
-                ax.set_title("Security Market Line (SML)")
-                ax.grid(alpha=0.3)
+                st.plotly_chart(fig, use_container_width=True)
 
-                st.pyplot(fig)
 
     with st.container(border = True): 
         st.subheader("CAPM - DAMODARAN - Mercado Emergentes")
@@ -846,6 +887,10 @@ with st.container(border = True):
                     yaxis_title="Retorno (%)",
                     legend_title_text=""
                 )
+                fig.update_layout(
+                plot_bgcolor="#0F172A",
+                paper_bgcolor="#0F172A",
+                font_color="white")
 
                 # Mostrar no Streamlit
                 st.plotly_chart(fig, use_container_width=True)
@@ -918,6 +963,11 @@ with st.container(border = True):
                     template="plotly_white",
                     hovermode="x unified",
                 )
+
+                fig.update_layout(
+                plot_bgcolor="#0F172A",
+                paper_bgcolor="#0F172A",
+                font_color="white")
 
                 # --------------------------------------------------
                 # Mostrar no Streamlit

@@ -973,6 +973,135 @@ with st.container(border = True):
                 # Mostrar no Streamlit
                 # --------------------------------------------------
                 st.plotly_chart(fig, use_container_width=True)
+
+    with st.container(border = True): 
+        st.subheader("CAPM - Adicione os seus valores")
+        col1, col2 = st.columns(2)
+        with col1:
+                beta3= st.number_input("Beta")
+                retorno_m = st.number_input("Rm Retorno mercado")
+                taxa_li_risco = st.number_input("Rf taxa livre de risco")
+                risco_paisss = st.number_input("Rp Risco pais")
+
+                capm = (taxa_li_risco + beta3*(retorno_m-taxa_li_risco) + risco_paisss)/100
+                st.metric("CAPM", f"{capm:.2%}" )
+
+        with col2:
+                betas5= np.linspace(0, 2.5, 100)
+                er1 = taxa_li_risco + betas5 * (retorno_m - taxa_li_risco)
+
+                df5 = pd.DataFrame({
+                    "Beta": betas5,
+                    "Retorno Esperado": er1
+                })
+
+                # --------------------------------------------------
+                # Ponto do setor/empresa
+                # --------------------------------------------------
+                er_empresa5 = taxa_li_risco + beta3 * (retorno_m - taxa_li_risco)
+                df_point1 = pd.DataFrame({
+                    "Beta": [beta3],
+                    "Retorno Esperado": [er_empresa5]
+                })
+
+                # --------------------------------------------------
+                # Criar gráfico com Plotly Express
+                # --------------------------------------------------
+                fig = px.line(
+                    df5,
+                    x="Beta",
+                    y="Retorno Esperado",
+                    title="Security Market Line (SML)",
+                    labels={"Beta": "Beta (β)", "Retorno Esperado": "Retorno Esperado E(R)"}
+                )
+
+                # Adicionar ponto do ativo/setor
+                fig.add_scatter(
+                    x=df_point1["Beta"],
+                    y=df_point1["Retorno Esperado"],
+                    mode="markers",
+                    marker=dict(size=14),
+                    name="Beta Damodaran"
+                )
+
+                # --------------------------------------------------
+                # Linha horizontal (Rf)
+                # --------------------------------------------------
+                fig.add_hline(
+                    y=taxa_li_risco,
+                    line_dash="dash",
+                    annotation_text="Rf (Taxa Livre de Risco)",
+                    annotation_position="bottom right",
+                    line_color="white",
+                )
+
+                # --------------------------------------------------
+                # Linha vertical em Beta = 1 (mercado)
+                # --------------------------------------------------
+                fig.add_vline(
+                    x=1,
+                    line_dash="dash",
+                    annotation_text="β = 1 (Mercado)",
+                    annotation_position="top",
+                    line_color="white",
+                )
+
+                # --------------------------------------------------
+                # Ajustes visuais
+                # --------------------------------------------------
+                fig.update_layout(
+                    template="plotly_white",
+                    hovermode="x unified",
+                )
+
+                fig.update_layout(
+                plot_bgcolor="#0F172A",
+                paper_bgcolor="#0F172A",
+                font_color="white")
+
+                # --------------------------------------------------
+                # Mostrar no Streamlit
+                # --------------------------------------------------
+                st.plotly_chart(fig, use_container_width=True)
+
+    with st.container(border = True): 
+        st.subheader("Kd - Custo de Terceiros")
+
+        col1,col2 = st.columns(2)
+
+        with col1:
+            with st.container(border=True):
+                st.write("Spread de Crédito + Taxa Livre de Riscos")
+                st.latex("Spread + Taxa Livre de Riscos")
+
+        with col2:
+            with st.container(border=True):
+                st.write("Kd Histórico")
+                st.latex("Despesas Financeiras / Dívida Bruta")
+
+        
+        with st.container(border=True):
+            st.write("Histórico de Empréstimos")
+            
+            meses = [
+                "Valor","juros anuais", "juros mensais","Peso","Ponderada"]
+
+            # Linhas (exemplo financeiro)
+
+            linhas = ["Empréstimo 1", "Empréstimo 2", "Empréstimo 3","Empréstimo 4"]
+
+            # DataFrame inicial
+            df_inicial = pd.DataFrame(
+                0.0,
+                index=linhas,
+                columns=meses
+            )
+
+            df_editado = st.data_editor(
+            df_inicial,
+            num_rows="dynamic"
+            )
+
         
 #beta ser selecionado por país e período ok 
 #Adicionar no gráfico dos retornos - a porcentagem que eles valem
